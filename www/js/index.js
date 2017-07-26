@@ -41,12 +41,13 @@ var app = {
 
         // When the search form is submitted, call highlightName with the
         // value entered in the form.
-        var input = document.querySelector('.search form');
-        input.onsubmit = function() {
-            var query = document.querySelector('.search #searchName').value;
+        var input = document.querySelector('.search #searchName');
+        document.querySelector('.search form').onsubmit = function() {
+            var query = input.value;
+            input.blur();
+
             app.highlightName(query);
 
-            input.blur();
             return false;
         };
     },
