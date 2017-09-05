@@ -1,0 +1,485 @@
+declare module MovinOL {
+/// <reference types="openlayers" />
+export declare class FloorSwitcherControl extends ol.control.Control {
+    private movinMap;
+    private tileProvider;
+    private isOpened;
+    private className;
+    private location;
+    private hidden;
+    private rootElement;
+    private otherFloorElement;
+    private toggleButton;
+    constructor(movinMap: Movin.MovinMap, tileProvider: Movin.MovinTileProvider, options: IFloorSwitcherControlOptions);
+    private applyCurrentOptions();
+    /**
+     * Call when the floor switcher is removed from an ol.Map object.
+     *
+     * This will unsubscribe from any event handlers.
+     */
+    destroy(): void;
+    private onFloorChanged;
+    private getFloorName(floorNumber);
+    /**
+     * Gets the current custom class name.
+     */
+    getClassName(): string;
+    /**
+     * Sets a custom class name.
+     * @param className
+     */
+    setClassName(className: string): void;
+    /**
+     * Gets the current location.
+     */
+    getLocation(): string;
+    /**
+     * Sets the location. Available options:
+     * - 'top-left'
+     * - 'top-right'
+     * - 'bottom-left'
+     * - 'bottom-right'
+     * @param location
+     */
+    setLocation(location: string): void;
+    /**
+     * Returns true if the floor switcher is opened.
+     */
+    getIsOpened(): boolean;
+    /**
+     * Opens the floor switcher.
+     */
+    open(): void;
+    /**
+     * Closes the floor switcher.
+     */
+    close(): void;
+    /**
+     * Returns true if the floor switcher is hidden.
+     */
+    getIsHidden(): boolean;
+    /**
+     * Hides the floor switcher.
+     */
+    hide(): void;
+    /**
+     * Shows the floor switcher.
+     */
+    show(): void;
+    private constructHTML(options);
+}
+export interface IFloorSwitcherControlOptions extends olx.control.ControlOptions {
+    /**
+     * The location of the floor switcher. Available options:
+     * - 'top-left'
+     * - 'top-right'
+     * - 'bottom-left'
+     * - 'bottom-right'
+     */
+    location?: string;
+    /**
+     * Custom class name to be appended before the other class names.
+     *
+     * This allows you to apply a custom style.
+     */
+    className?: string;
+    /**
+     * True if the floor switcher should be hidden.
+     */
+    hidden?: boolean;
+}
+export declare class OLControlFactory {
+    private static instance;
+    static getInstance(): OLControlFactory;
+    private constructor();
+    createFloorSwitcherControl(movinMap: Movin.MovinMap, tileProvider: Movin.MovinTileProvider, options?: IFloorSwitcherControlOptions): FloorSwitcherControl;
+}
+export interface IEntityEvent {
+    (poi: Movin.MovinEntity, coordinate: [number, number]): void;
+}
+export interface ISetMovinMapOptions {
+    /**
+     * True if the view should center on the map.
+     */
+    fitToMap?: boolean;
+    /**
+     * The tile provider to use when rendering the map.
+     */
+    tileProvider?: Movin.MovinTileProvider;
+    /**
+     * The name of the tile layer to use when the 'tileProvider' property is not set.
+     *
+     * Defaults to 'Default'.
+     */
+    tileLayer?: string;
+    /**
+     * The name of the tile style to use when the 'tileProvider' property is not set.
+     *
+     * Defaults to 'Default'.
+     */
+    tileStyle?: string;
+    /**
+     * Options related to the floor switcher.
+     */
+    floorSwitcherControl?: {
+        /**
+         * True if the floor switcher is hidden.
+         */
+        hidden?: boolean;
+        /**
+         * The location of the floor switcher. Available options:
+         * - 'top-left'
+         * - 'top-right'
+         * - 'bottom-left'
+         * - 'bottom-right'
+         */
+        location?: string;
+        /**
+         * Custom class name to be appended before the other class names.
+         *
+         * This allows you to apply a custom style.
+         */
+        className?: string;
+    };
+}
+/// <reference types="openlayers" />
+/**
+ * Factory for creating Movin specific Openlayers layers.
+ *
+ * This factory is also responsible for caching fonts and images.
+ */
+export declare class MovinLayerFactory {
+    private static instance;
+    static getInstance(): MovinLayerFactory;
+    private imageCacher;
+    private fontCacher;
+    private renderHelper;
+    private constructor();
+    /**
+     * Prepares the image and font cache for use of the given MovinTileStyle.
+     *
+     * This function will preload all icons and fonts.
+     * @param style
+     */
+    prepareCache(map: Movin.MovinMap, style: Movin.MovinMapStyle): Promise<void>;
+    /**
+     * Constructs a new ol.layer.Tile layer configured to display Movin tiles.
+     * @param map The map to get tiles for.
+     * @param floor The floor to get tiles for.
+     * @param movinLayer The layer to get tiles for.
+     * @param movinStyle The style to get tiles for.
+     */
+    createMovinTileLayer(tileProvider: Movin.MovinTileProvider): ol.layer.Tile;
+    /**
+     * Constructs a new ol.layer.Image layer configured to draw text.
+     * @param map The map to draw text for.
+     * @param floor The floor to draw text for.
+     * @param movinRule The rule to use when styling the text.
+     * @param index The z index of the layer.
+     */
+    createMovinTextLayer(olMap: ol.Map, movinMap: Movin.MovinMap, floor: number, movinLayer: Movin.MovinTileStyleLayer, movinRule: Movin.MovinTileStyleTextRule, index: number): ol.layer.Base;
+    /**
+     * Constructs a new ol.layer.Image layer configured to draw POIs.
+     * @param map The map to draw POIs for.
+     * @param floor The floor to draw POIs for.
+     * @param movinRule The rule to use when styling the POIs.
+     * @param index The z index of the layer.
+     */
+    createMovinPOILayer(olMap: ol.Map, movinMap: Movin.MovinMap, floor: number, movinLayer: Movin.MovinTileStyleLayer, movinRule: Movin.MovinTileStyleRule, index: number): ol.layer.Base;
+}
+/// <reference types="openlayers" />
+/**
+ * Wraps an Openlayers Map object.
+ */
+export declare class MovinOLMap extends ol.Map {
+    private movinMap;
+    private internalLayers;
+    private tileProvider;
+    private floorSwitcherControl;
+    private options;
+    private topIndex;
+    private poiClickHandlers;
+    private textClickHandlers;
+    /**
+     * Constructs a new MovinOLMap object.
+     * @param options olx.MapOptions objects.
+     */
+    constructor(options: olx.MapOptions);
+    /**
+     * Adds an event handler which will be fired once a user clicks on a POI.
+     * @param handler
+     */
+    addPOIClickHandler(handler: IEntityEvent): void;
+    /**
+     * Removes a POI click event handler.
+     * @param handler
+     */
+    removePOIClickHandler(handler: IEntityEvent): void;
+    /**
+     * Adds an event handler which will be fired once a user click on text.
+     * @param handler
+     */
+    addTextClickHandler(handler: IEntityEvent): void;
+    /**
+     * Removes a text click event handler.
+     * @param handler
+     */
+    removeTextClickHandler(handler: IEntityEvent): void;
+    setView(view: ol.View): void;
+    private addInternalEventHandlers();
+    private firePOIClickHandler(entity, coordinate);
+    private fireTextClickHandler(entity, coordinate);
+    /**
+     * Sets the active Movin map.
+     * @param map The active MovinMap
+     * @param options Optional. An object with options.
+     */
+    setMovinMap(map: Movin.MovinMap, options?: ISetMovinMapOptions): Promise<void>;
+    /**
+     * Gets the active Movin map.
+     */
+    getMovinMap(): Movin.MovinMap;
+    /**
+     * Sets the active tile provider.
+     * @param tileProvider
+     */
+    setTileProvider(tileProvider: Movin.MovinTileProvider): Promise<void>;
+    /**
+     * Gets the active tile provider.
+     */
+    getTileProvider(): Movin.MovinTileProvider;
+    /**
+     * Gets the floor switcher control.
+     */
+    getFloorSwitcherControl(): FloorSwitcherControl;
+    /**
+     * Sets the floor of the active tile provider.
+     * @param floor
+     */
+    setFloor(floor: number): void;
+    /**
+     * Returns the floor of the active tile provider.
+     */
+    getFloor(): number;
+    /**
+     * Returns the layer index on top of all Movin layers.
+     */
+    getTopIndex(): number;
+    private onFloorChanged;
+    /**
+     * Fits the map view to the active Movin map.
+     */
+    fitToMap(): void;
+    private clearInternalLayers();
+    /**
+     * Initializes the Movin map. This will first remove all internal controls and layers.
+     * Next it will recreate them.
+     *
+     * Calling this function will therefore effectively refresh this MovinOLMap.
+     */
+    initializeMovinMap(): void;
+    /**
+     * Creates all text and poi layers as defined by the active map style.
+     */
+    private prepareInternalLayers();
+}
+/// <reference types="openlayers" />
+export declare abstract class MovinCanvasSource extends ol.source.ImageCanvas {
+    protected olMap: ol.Map;
+    protected movinMap: Movin.MovinMap;
+    protected floor: number;
+    protected layer: Movin.MovinTileStyleLayer;
+    protected rule: Movin.MovinTileStyleRule;
+    private static RATIO;
+    private canvas;
+    constructor(olMap: ol.Map, movinMap: Movin.MovinMap, floor: number, layer: Movin.MovinTileStyleLayer, rule: Movin.MovinTileStyleRule);
+    private render(extent, resolution, pixelRatio, size, projection);
+    protected extentToBoundingBox(extent: ol.Extent): Movin.GeoAABB;
+    protected abstract renderLayer(rule: Movin.MovinTileStyleRule, extent: ol.Extent, size: ol.Size, pixelRatio: number, transform: Transform, context: CanvasRenderingContext2D): any;
+    private isVisible();
+    private hasMinZoom();
+    private hasMaxZoom();
+    protected getZoom(): number;
+    protected getFloor(): number;
+    private getCanvasForSize(size);
+}
+/// <reference types="openlayers" />
+export declare class MovinPOISource extends MovinCanvasSource {
+    private renderHelper;
+    private renderer;
+    private filteredEntities;
+    private spatialDictionary;
+    private currentSpatialDictionaryZoom;
+    private currentSpatialDictionaryRotation;
+    private lastRenderResult;
+    constructor(olMap: ol.Map, movinMap: Movin.MovinMap, floor: number, layer: Movin.MovinTileStyleLayer, rule: Movin.MovinTileStyleRule, renderHelper: RenderHelper);
+    getEntitiesAt(coordinate: [number, number]): Movin.MovinEntity[];
+    protected renderLayer(rule: Movin.MovinTileStyleRule, extent: ol.Extent, size: ol.Size, pixelRatio: number, transform: Transform, context: CanvasRenderingContext2D): void;
+    private createSpatialDictionary(transform);
+    private loadEntities();
+    private initializeSpatialDictionariesForEntity(entity, extent, size, pixelRatio);
+    /**
+     * Checks if the given entity should be rendered by this source.
+     * @param entity Entity to check
+     */
+    private entityIsPartOfRule(entity);
+}
+/// <reference types="openlayers" />
+export declare class MovinTextSource extends MovinCanvasSource {
+    private renderHelper;
+    private renderer;
+    private lastRenderResult;
+    private spatialDictionary;
+    constructor(olMap: ol.Map, movinMap: Movin.MovinMap, floor: number, layer: Movin.MovinTileStyleLayer, rule: Movin.MovinTileStyleTextRule, renderHelper: RenderHelper);
+    getEntitiesAt(coordinate: [number, number]): Movin.MovinEntity[];
+    protected renderLayer(rule: Movin.MovinTileStyleRule, extent: ol.Extent, size: ol.Size, pixelRatio: number, transform: Transform, context: CanvasRenderingContext2D): void;
+    private loadEntities();
+    /**
+     * Checks if the given entity should be rendered by this source.
+     * @param entity Entity to check
+     */
+    private entityIsPartOfRule(entity);
+}
+/// <reference types="openlayers" />
+export declare class MovinTileSource extends ol.source.XYZ {
+    private tileProvider;
+    private static debugReportingInitialized;
+    private static debugReportingInterval;
+    private static totalTilesLoaded;
+    private static totalTileLoadErrors;
+    private static totalTileLoadTime;
+    private transparentTileUrl;
+    constructor(tileProvider: Movin.MovinTileProvider);
+    private static initializeDebugReporting();
+    private createTransparentTileUrl();
+    private getTileUrl(tile, src);
+}
+export declare class FontCacher {
+    private fontNames;
+    prepareFontCacheForStyle(style: Movin.MovinMapStyle): Promise<void>;
+    private prepareFontCacheForLayer(layer);
+    cacheFont(name: string, url: string): void;
+    urlIsRegistered(url: string): boolean;
+    registerFontName(name: string, url: string): void;
+    getFontName(url: string): string;
+}
+export declare class ImageCacher {
+    private static readonly PREFERRED_POI_SCALE_LEVEL;
+    private imageCache;
+    prepareImageCacheForMap(map: Movin.MovinMap): Promise<void>;
+    private preparePOISubType(subType);
+    cacheImage(url: string, image: HTMLImageElement): void;
+    clearCache(): void;
+    getCachedImage(url: string): any;
+}
+export declare class POIRenderer {
+    private map;
+    private renderHelper;
+    constructor(map: Movin.MovinMap, renderHelper: RenderHelper);
+    renderRule(rule: Movin.MovinTileStyleRule, transform: Transform, context: CanvasRenderingContext2D, entities: Movin.MovinEntity[]): RenderResult;
+    private computePOIRenderProperties(entity, rule, transform);
+    /**
+     * Computes a GeoAABB for the given poi, rule and transform.
+     * @param entity
+     * @param rule
+     * @param transform
+     */
+    computeRenderedPOIGeoAABB(entity: Movin.MovinEntity, rule: Movin.MovinTileStyleRule, transform: Transform): Movin.GeoAABB;
+    /**
+     * Computes a bounding box in pixel coordinates for the given POI render options.
+     * @param position
+     * @param size
+     * @param anchorOffset
+     * @param rotation
+     * @param transform
+     */
+    private getRenderBox(renderProperties);
+    private getPOIRotation(poi, rule, transform);
+    private getMapSubType(name);
+}
+export declare class RenderHelper {
+    fontCacher: FontCacher;
+    imageCacher: ImageCacher;
+    constructor(fontCacher: FontCacher, imageCacher: ImageCacher);
+    rotatePoint(point: [number, number], angle: number): [number, number];
+    applyFill(rule: Movin.MovinTileStyleRule, context: CanvasRenderingContext2D): void;
+    applyStrokeBase(zoom: number, rule: Movin.MovinTileStyleRule, context: CanvasRenderingContext2D): void;
+    applyStroke(rule: Movin.MovinTileStyleRule, context: CanvasRenderingContext2D): void;
+    debugRenderSpatialDictionary(spatialDictionary: Movin.GeoSpatialDictionary<Movin.MovinEntity>, context: CanvasRenderingContext2D, transform: Transform, floor: number): void;
+    private debugRenderSpatialCell(cell, context, transform);
+    debugRenderShape(shape: Movin.GeoShape, context: CanvasRenderingContext2D, transform: Transform): void;
+}
+export declare class RenderResult {
+    private usedTransform;
+    private results;
+    constructor(usedTransform: Transform);
+    addRenderResult(result: RenderResultBox): void;
+    getEntitiesAtCoordinate(coordinate: [number, number]): Movin.MovinEntity[];
+    /**
+     * Renders the render result. Used for debugging.
+     * @param context
+     * @param transform
+     */
+    render(context: CanvasRenderingContext2D, transform: Transform): void;
+}
+export declare class RenderResultBox {
+    readonly entity: Movin.MovinEntity;
+    readonly pixelBox: [number, number][];
+    constructor(entity: Movin.MovinEntity, pixelBox: [number, number][]);
+    pointIsInBox(point: [number, number]): boolean;
+    render(context: CanvasRenderingContext2D, transform: Transform): void;
+}
+export declare class TextRenderer {
+    private renderHelper;
+    private internationalization;
+    constructor(renderHelper: RenderHelper, internationalization: Movin.MovinI18N);
+    render(rule: Movin.MovinTileStyleTextRule, transform: Transform, context: CanvasRenderingContext2D, entities: Movin.MovinEntity[]): RenderResult;
+    private renderText(rule, entity, fill, rotation, context, transform);
+    private applyHalo(rule, context, transform);
+    private applyFont(rule, context, transform);
+    private getSplitTextFromEntity(entity, rule);
+    private getTextFromEntity(entity, rule);
+    private getTextRotation(entity, rule, transform);
+    private calculateGeometryCenter(geometry);
+    private calculateTextBounding(lines, center, rotation, context);
+    private calculateTextWidth(lines, context);
+    private calculateTextHeight(lines, context);
+    private getSingleLineHeight(context);
+    /**
+     * Returns a clockwise text box.
+     * @param entity
+     * @param transform
+     */
+    private calculateEntityTextBox(entity, transform);
+    /**
+     * Returns true if box1 is completed contained by box2.
+     * @param box1 An array with the four coordinates of box1.
+     * @param box2 An array with the four coordinates of box2.
+     */
+    private boxIsInBox(box1, box2);
+    /**
+     * Returns true if the given point is inside the box.
+     * @param point The point.
+     * @param box An array with the four coordinates of the box.
+     */
+    private pointIsInBox(point, box);
+    private rotatePoint(point, angle);
+    private isClockWise(points);
+}
+/// <reference types="openlayers" />
+export declare class Transform {
+    private olMap;
+    private renderSize;
+    private extent;
+    private renderPixelRatio;
+    private rotation;
+    private static renderHelper;
+    constructor(olMap: ol.Map, renderSize: [number, number], extent: [number, number, number, number], renderPixelRatio: number, rotation: number);
+    coordinateToPixel(coordinate: [number, number]): [number, number];
+    getWidthPerPixel(): number;
+    getHeightPerPixel(): number;
+    getRotation(): number;
+    getPixelRatio(): number;
+    getZoom(): number;
+}
+}

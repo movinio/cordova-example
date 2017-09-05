@@ -1,0 +1,7 @@
+{
+  "name": "movinsdk-openlayers",
+  "version": "1.0.3",
+  "description": "Openlayers plugin for the Javascript MovinSDK.",
+  "main": "movinsdk-openlayers.js",
+  "typings": "./movinsdk-openlayers.d.ts"
+}
