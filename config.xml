@@ -29,6 +29,6 @@
     <engine name="ios" spec="~4.3.1" />
     <plugin name="cordova-plugin-whitelist" spec="1" />
     <plugin name="cordova-plugin-statusbar" spec="~2.2.3" />
-    <plugin name="movinsdk-cordova" spec="~0.0.2" />
+    <plugin name="movinsdk-cordova" spec="~1.0.3" />
     <engine name="android" spec="~6.2.3" />
 </widget>
