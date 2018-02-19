@@ -25,10 +25,15 @@
         <preference name="StatusBarOverlaysWebView" value="false" />
         <preference name="StatusBarStyle" value="default" />
         <preference name="StatusBarBackgroundColor" value="#f9f9f9" />
+        <edit-config file="*-Info.plist" mode="merge" target="NSLocationWhenInUseUsageDescription">
+            <string>your-ios-request-permission-message</string>
+        </edit-config>
     </platform>
     <engine name="ios" spec="~4.3.1" />
     <plugin name="cordova-plugin-whitelist" spec="1" />
     <plugin name="cordova-plugin-statusbar" spec="~2.2.3" />
-    <plugin name="movinsdk-cordova" spec="~1.0.3" />
+    <plugin name="movinsdk-cordova" spec="~1.0.12" />
+    <plugin name="cordova-plugin-android-permissions" spec="^1.0.0" />
+    <plugin name="cordova-plugin-device" spec="^2.0.1" />
     <engine name="android" spec="~6.2.3" />
 </widget>

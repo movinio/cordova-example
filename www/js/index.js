@@ -63,7 +63,8 @@ var app = {
 
             // Create the OL Map.
             var olMap = new MovinOL.MovinOLMap({
-                target: 'map-container'
+                target: 'map-container',
+                pixelRatio: 1
             });
 
             // Add world map layer
@@ -99,10 +100,106 @@ var app = {
             layer.setZIndex(2);
             
             olMap.addLayer(layer);
+
+            // Request permissions to scan for iBeacons
+            app.requestPermissions();
+
+            // Start scanning for iBeacons
+            app.scanForBeacons();
         },
         function(error) {
             alert('Could not load map data: ' + error);
         });
+    },
+
+    // Requests the necessary bluetooth permissions to scan for beacons
+    requestPermissions: function() {
+        
+        // On iOS, there is SDK support to request bluetooth permissions:
+        if(device.platform.toLowerCase() == "ios") {
+            Movin.MovinIOS.requestWhenInUseAuthorization();
+        } 
+        
+        // On Android, use a plugin for this
+        else if(device.platform.toLowerCase() == "android") {
+            var permissions = cordova.plugins.permissions;
+            permissions.requestPermission(permissions.ACCESS_FINE_LOCATION, 
+                // Success method
+                function(status) {
+                    if(!status.hasPermission) {
+                        alert("Permission denied!");
+                    } else {
+                        console.log("Received location permission")
+                    }
+                },
+                // Error method
+                function() {
+                    alert("Permission denied!");
+                }
+            )
+        }
+    },
+
+    // Starts scanning for beacons
+    scanForBeacons: function() {
+        var beaconScanner = Movin.MovinSDK.beaconScanner;
+
+        // Add the map to the beacon scanner, so it can scan for the beacons found in the map
+        beaconScanner.addMap(this.map);
+
+        // Start the beaconScanner with a listener
+        beaconScanner.start({
+            
+            // Check if the scanned beacon can be used as the nearest beacon (i.e. to determine the current room)
+            isValidNearestBeacon: function(rangedBeacon) {
+                // Make sure the ranged beacon is known in the database and has a location attached to it
+                return rangedBeacon.beacon && rangedBeacon.beacon.position;
+            },
+
+            // When a new beacon became the nearest beacon, or no more valid beacons are seen, this method is called
+            onNearestBeaconChanged: function(rangedBeacon) {
+                if(!rangedBeacon) {
+                    // No longer near any valid beacons (in this case beacons with a known location in our database)
+                    // Do something with this information, i.e. unhighlight any previous highlight
+                    console.log("No longer near any valid beacons")
+                } else {
+                    // Found a nearest beacon, of which we know for sure it has a position
+                    var beaconPosition = rangedBeacon.beacon.position;
+                    // Do something with this position, such as get the underlying room entity
+                    app.map.getEntitiesInShape(beaconPosition.position, beaconPosition.floor)
+                    .then(
+                        function(entities) {
+                            // Try to find the room entity at this beacon position
+                            var roomEntity = null;
+                            for(var entity of entities) {
+                                if(entity.subType.baseType == "Room") {
+                                    roomEntity = entity;
+                                }
+                            }
+
+                            // Do something with the room entity, i.e. highlight it
+                            if(roomEntity) {
+                                console.log("Near a room entity!");
+                            } else {
+                                console.log("Near a beacon that is not in a room entity. Beacon: ", JSON.stringify(rangedBeacon.beaconIdentifier));
+                            }
+                        },
+                        function(error) {
+                            alert(error);
+                        }
+                    )
+                }
+            },
+
+            // Called each second to inform you of all nearby beacons
+            onBeaconsRanged: function(rangedBeacons) {
+                // Do something with this information
+                // For now, log the first 5 beacons (they are sorted, so they are also the 5 nearest beacons)
+                for(var i = 0; i < Math.min(5, rangedBeacons.length); i++) {
+                    console.log("Ranged a beacon at " + rangedBeacons[i].distance + "m distance: " + JSON.stringify(rangedBeacons[i].beaconIdentifier));
+                }
+            }
+        })
     },
 
     // Finds the first "Room" entity which contains the specified text in

@@ -8,5 +8,21 @@
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "Apache Cordova Team",
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "cordova": {
+        "platforms": [
+            "ios",
+            "android"
+        ],
+        "plugins": {
+            "cordova-plugin-android-permissions": {},
+            "cordova-plugin-device": {}
+        }
+    },
+    "dependencies": {
+        "cordova-android": "~6.2.3",
+        "cordova-ios": "~4.3.1",
+        "cordova-plugin-android-permissions": "^1.0.0",
+        "cordova-plugin-device": "^2.0.1"
+    }
 }
